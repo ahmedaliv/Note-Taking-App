@@ -5,7 +5,10 @@ import { Container } from "react-bootstrap"
 import {Routes,Route,Navigate} from 'react-router-dom'
 import NewNote from "./components/NewNote"
 import NoteList from './components/NoteList'
+import NoteLayout from './components/NoteLayout'
 import { v4 as uuidV4 } from "uuid"
+import Note from './components/Note'
+import EditNote from './components/EditNote'
 
 
 
@@ -56,23 +59,70 @@ const App = () => {
       ]
     })
   }
-
+  function onUpdateNote(id: string, { tags, ...data }: NoteData) {
+    setNotes(prevNotes => {
+      return prevNotes.map(note => {
+        if (note.id === id) {
+          // save old data , and override what changed
+          return {...note,...data,tagIds:tags.map(tag => tag.id)}
+        } else {
+          return note
+        }
+      })
+    })
+  }
   function addTag(tag: Tag) {
     setTags(prev=>[...prev,tag])
   }
+  function onDeleteNote(id: string) {
+    setNotes(prevNotes => {
+      return prevNotes.filter(note => note.id !== id)
+    })
+  }
+  function updateTag(id: string, label: string) {
+    setTags(prevTags => {
+      return prevTags.map(tag => {
+        if (tag.id === id) {
+          return{...tag,label}
+        }
+        else {
+          return tag
+        }
+      })
+    })
+  }
+  function deleteTag(id: string) {
+    setTags(prevTags => {
+     return prevTags.filter(tag => tag.id !== id)
+   })
+  }
+
   return (
   <Container className='my-4'>
     <Routes>
-      <Route path='/' element={<NoteList availableTags={tags} notes={notesWithTags}/>} />
+        <Route path='/'
+          element={<NoteList
+            availableTags={tags}
+            notes={notesWithTags}
+            onUpdateTag={updateTag}
+            onDeleteTag={deleteTag}
+          />} />
         <Route path='/new' element={
           <NewNote
             onSubmit={onCreateNote}
             onAddTag={addTag}
             availableTags={tags}
           />} />
-      <Route path='/:id'>
-        <Route index element={<h1>Show</h1>} />
-        <Route path="edit" element={<h1>Edit</h1>} />
+      <Route path='/:id' element={< NoteLayout notes={notesWithTags} />}>
+          <Route index element={<Note
+               onDelete={onDeleteNote}
+          />} />
+          <Route path="edit"
+            element={<EditNote
+              onSubmit={onUpdateNote}
+              onAddTag={addTag}
+              availableTags={tags}
+          />} />
       </Route>
       <Route path='*'  element={<Navigate to='/' />}/>
       </Routes>
